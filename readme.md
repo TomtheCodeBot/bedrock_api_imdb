@@ -42,16 +42,16 @@
 
 To run the script on the IMDB train dataset, using the Titan light model, run this following command:
 
-    ```bash
-      python run.py --dataset imdb 
-                        --subset train 
-                        --api-profile your_api_profile 
-                        --default-region us-east-1 
-                        --bedrock-assume-role your_assume_role 
-                        --temperature 0 
-                        --model-name amazon.titan-text-lite-v1:0:4k 
-                        --top-p 0.1 
-      ```
+```bash
+  python run.py --dataset imdb 
+                    --subset train 
+                    --api-profile your_api_profile 
+                    --default-region us-east-1 
+                    --bedrock-assume-role your_assume_role 
+                    --temperature 0 
+                    --model-name amazon.titan-text-lite-v1:0:4k 
+                    --top-p 0.1 
+  ```
 
 # Command-line Arguments
 
