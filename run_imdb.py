@@ -165,12 +165,6 @@ if __name__ == "__main__":
     args = arg_parser.parse_args()
 
     # Your logic for calling the generative AI models in AWS Bedrock goes here
-    print("API Profile:", args.api_profile)
-    print("Temperature:", args.temperature)
-    print("Top-p:", args.top_p)
-    print("Top-k:", args.top_k)
-    print("Start Index:", args.start_index)
-    print("End Index:", args.end_index)
     
     print(f"[INFO]:Loading datasets - {args.dataset}")
     dataset = datasets.load_dataset(args.dataset,split = args.subset)
