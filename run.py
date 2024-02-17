@@ -12,7 +12,7 @@ from time import sleep
 from tqdm import tqdm
 import argparse
 import datasets
-prompt_data = """For the paragraph: '{}', is the sentiment in this paragraph positive or negative? Answer in one word."""
+prompt_data = """For the paragraph: '{}', is the sentiment in this paragraph positive or negative? Answer in one word.\n\n"""
 def create_arg_parser():
     parser = argparse.ArgumentParser(description="Script to call generative AI models in AWS Bedrock.")
 
