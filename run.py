@@ -187,7 +187,7 @@ def run(name_output,data,args,boto3_bedrock):
             row.append(data['label'][i].item())
             label =labels[data['label'][i].item()] 
             response = api_generate_resp(prompt,args,boto3_bedrock)
-            correct = correct_check.check_correct(response,label=labels[label])
+            correct = correct_check.check_correct(response,label)
             row.append(response)
             row.append(correct)
             # Write the data to the CSV file
