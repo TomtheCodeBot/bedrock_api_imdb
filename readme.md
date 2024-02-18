@@ -50,9 +50,7 @@ To run the script on the IMDB train dataset, using the Titan light model, run th
                      --bedrock-assume-role your_assume_role \
                      --temperature 0 \
                      --model-name amazon.titan-text-lite-v1 \
-                     --top-p 0.1 \
-                     --start-index 0 \
-                     --end-index 1
+                     --top-p 0.1 
   ```
 
 # Command-line Arguments
