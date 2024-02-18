@@ -129,6 +129,8 @@ def generate_response(prompt, args, boto3_bedrock):
             "top_p":args.top_p
             }
         ) 
+    else:
+        raise Exception("model is yet to be implemented.")
     modelId = args.model_name # change this to use a different version from the model provider
     accept = 'application/json'
     contentType = 'application/json'
@@ -142,7 +144,8 @@ def generate_response(prompt, args, boto3_bedrock):
             outputText = response_body.get('results')[0].get('outputText')
         elif "cohere" in args.model_name:
             outputText = response_body.get('generations')[0].get('text')
-        
+        elif "meta" in args.model_name:
+            outputText = response_body.get('generation')
         return outputText
     except botocore.exceptions.ClientError as error:
         
@@ -232,5 +235,3 @@ if __name__ == "__main__":
     print(f"[INFO]: Generating responds")
     print(f"[INFO]: Output destintation: {output_destination}")
     run(output_destination,dataset,args,boto3_bedrock)
-    
-    
