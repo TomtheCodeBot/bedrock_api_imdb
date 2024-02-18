@@ -8,10 +8,16 @@ import botocore
 import datetime
 from utils import bedrock, print_ww,correct_check
 from time import sleep
-
+import pandas as pd
 from tqdm import tqdm
 import argparse
 import datasets
+from langchain_community.chat_models.anthropic import (
+    convert_messages_to_prompt_anthropic,
+)
+from langchain_community.chat_models.meta import convert_messages_to_prompt_llama
+from langchain.schema import HumanMessage
+
 prompt_data = """For the paragraph: '{}', is the sentiment in this paragraph positive or negative? Answer in one word.\n\n"""
 def create_arg_parser():
     parser = argparse.ArgumentParser(description="Script to call generative AI models in AWS Bedrock.")
@@ -88,17 +94,41 @@ def create_arg_parser():
     )
 
     return parser
-def generate_response( args, boto3_bedrock):
+def generate_response(prompt, args, boto3_bedrock):
     # model: str, prompt: str, max_token: maximm number of generated tokens
-    body = json.dumps({
-    "inputText": prompt_data, 
-    "textGenerationConfig":{
-        "maxTokenCount":10,
-        "stopSequences":[],
-        "temperature":args.temperature,
-        "topP":args.top_p
-        }
-    }) 
+    message = HumanMessage(content =prompt)
+    if "titan" in args.model_name:
+        prompt = convert_messages_to_prompt_anthropic(
+            messages=[message],
+            human_prompt="\n\nUser:",
+            ai_prompt="\n\nBot:",
+        )
+        body = json.dumps({
+            "inputText": prompt, 
+            "textGenerationConfig":{
+                "maxTokenCount":10,
+                "stopSequences":[],
+                "temperature":args.temperature,
+                "topP":args.top_p
+                }
+            }) 
+    elif "cohere" in args.model_name:
+        body = json.dumps({
+            "prompt": prompt, 
+            "max_tokens":10,
+            "temperature":args.temperature,
+            "p":args.top_p
+            }
+        ) 
+    elif "meta" in args.model_name:
+        prompt = convert_messages_to_prompt_llama(messages=[message])
+        body = json.dumps({
+            "prompt": prompt, 
+            "max_gen_len":10,
+            "temperature":args.temperature,
+            "top_p":args.top_p
+            }
+        ) 
     modelId = args.model_name # change this to use a different version from the model provider
     accept = 'application/json'
     contentType = 'application/json'
@@ -106,9 +136,13 @@ def generate_response( args, boto3_bedrock):
     try:
 
         response = boto3_bedrock.invoke_model(body=body, modelId=modelId, accept=accept, contentType=contentType)
+        
         response_body = json.loads(response.get('body').read())
-
-        outputText = response_body.get('results')[0].get('outputText')
+        if "titan" in args.model_name:
+            outputText = response_body.get('results')[0].get('outputText')
+        elif "cohere" in args.model_name:
+            outputText = response_body.get('generations')[0].get('text')
+        
         return outputText
     except botocore.exceptions.ClientError as error:
         
@@ -145,8 +179,8 @@ def run(name_output,data,args,boto3_bedrock):
 
         labels = [False,True]
         for i in tqdm(range(data.shape[0])):
-            prompt = prompt_data.format(data['sentence'][i])
-            row = [data['sentence'][i]]
+            prompt = prompt_data.format(data['text'][i])
+            row = [data['text'][i]]
             row.append(data['label'][i].item())
             label =labels[data['label'][i].item()] 
             response = api_generate_resp(prompt,args,boto3_bedrock)
@@ -167,7 +201,7 @@ if __name__ == "__main__":
     # Your logic for calling the generative AI models in AWS Bedrock goes here
     
     print(f"[INFO]:Loading datasets - {args.dataset}")
-    dataset = datasets.load_dataset(args.dataset,split = args.subset)
+    dataset = pd.DataFrame(datasets.load_dataset(args.dataset,split = args.subset))
 
     print("[INFO]:Setting up bedrock client")
 
@@ -181,9 +215,9 @@ if __name__ == "__main__":
     )
     now = datetime.datetime.now()
     date_str = now.strftime("%Y-%m-%d")
-    model_name = "your_model_name"  # Replace with your actual model name
+    model_name = args.model_name  # Replace with your actual model name
     
-    if args.start_index is not None !=  args.end_index is not None:
+    if (args.start_index is not None) !=  (args.end_index is not None):
         raise Exception("[ERROR]:Both start index and end index needs to be inserted in order for to accurately generate results. To run the full data,leave BOTH parameters empty.")
     elif args.start_index is not None:
         print(f"[INFO]: Generating results for {args.subset} data between {args.start_index} - {args.end_index}.")
@@ -192,7 +226,7 @@ if __name__ == "__main__":
     else:
         print(f"[INFO]: Generating results entire {args.subset} data.")
         specified_length = "full"
-    name_output = f"{date_str}_{model_name}_{specified_length}.csv"
+    name_output = f"{date_str}_{model_name}_{args.subset}_{specified_length}.csv"
     output_destination = f"output/{name_output}"
 
     print(f"[INFO]: Generating responds")
