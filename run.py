@@ -129,6 +129,16 @@ def generate_response(prompt, args, boto3_bedrock):
             "top_p":args.top_p
             }
         ) 
+           
+    elif "anthropic" in args.model_name:
+        prompt = convert_messages_to_prompt_anthropic(messages=[message])
+        body = json.dumps({
+            "prompt": prompt, 
+            "max_tokens_to_sample":10,
+            "temperature":args.temperature,
+            "top_p":args.top_p
+            }
+        ) 
     else:
         raise Exception("model is yet to be implemented.")
     modelId = args.model_name # change this to use a different version from the model provider
@@ -146,6 +156,8 @@ def generate_response(prompt, args, boto3_bedrock):
             outputText = response_body.get('generations')[0].get('text')
         elif "meta" in args.model_name:
             outputText = response_body.get('generation')
+        elif "anthropic" in args.model_name:
+            outputText = response_body.get('completion')
         return outputText
     except botocore.exceptions.ClientError as error:
         
